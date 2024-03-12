@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  app:
+    build: backend/.
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - mongo-network
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/mydatabase
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - mongo-network
+    volumes:
+      - mongodb-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    networks:
+      - mongo-network
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017/mydatabase
+  client:
+    build: frontend/.
+    networks:
+      - mongo-network
+    ports:
+      - "5000:5000"
+  nginx:
+    image: nginx:latest
+    networks:
+      - mongo-network
+    links:
+      - app
+      - client
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+      - client
+    restart: always
+
+networks:
+  mongo-network:
+
+volumes:
+  mongodb-data:

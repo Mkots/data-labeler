@@ -1,1 +1,1 @@
-Data labeler
+docker compose up --build

@@ -1,5 +1,5 @@
 export const updateLabel = (id: number, label: number) => {
-    return fetch(`/api/messages/${id}`, {
+    return fetch(`/api/message/${id}`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json"

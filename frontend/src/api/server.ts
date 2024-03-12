@@ -1,14 +1,14 @@
 import { createServer } from "miragejs"
-import * as data from '../data/data.json' with { type: "json" };
+import data from '../data/data.json' with { type: "json" };
 
 export const makeServer = () => {
     
 createServer({
         routes() {
-            this.get("/api/messages", (schema, request) => {
+            this.get("/api/messages", (schema) => {
                 return schema.db.messages
             }),
-            this.patch("/api/messages/:id", (schema, request) => {
+            this.patch("/api/message/:id", (schema, request) => {
                 let id = request.params.id
                 let attrs = JSON.parse(request.requestBody)
                 console.log(attrs);
@@ -17,7 +17,7 @@ createServer({
         },
         seeds(server) {
             server.db.loadData({
-                messages: data.default
+                messages: data
             })
         }
     })
