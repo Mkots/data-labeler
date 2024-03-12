@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 
 import { makeServer } from "./api/server"
-import { getAllMessages } from './api/getAllMessages'
+import { getMessage } from './api/getMessage'
 import { updateLabel } from './api/updateLabel'
 
 if (!import.meta.env.PROD) makeServer();
@@ -13,22 +13,31 @@ const keyMap = {
   HARM: "3"
 };
 
+const labelsMap = [
+  "OK",
+  "Spam",
+  "Harm"
+]
+
 export const App: React.FC = () => {
-  const [checkMessages, setCheckMessages] = useState<Array<{ id: number, text: string }>>([])
-  const [currentMessage, setCurrentMessage] = useState<number>(0)
+  const [currentMessage, setCurrentMessage] = useState<{_id: string, text: string, label?: number}>()
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    getAllMessages()
+    getMessage()
       .then((json) => {
-        setCheckMessages(json)
+        setCurrentMessage(json)
         setIsLoading(false)
       })
   }, [])
 
-  const updateMessageLabel = (id: number, label: number) => {
-    updateLabel(id, label)
-    setCurrentMessage(currentMessage + 1)
+  const updateMessageLabel = (message: any, label: number) => {
+    updateLabel(message, label)
+    getMessage()
+      .then((json) => {
+        setCurrentMessage(json)
+        setIsLoading(false)
+      })
   }
 
   useHotkeys(keyMap.SPAM, () => updateMessageLabel(currentMessage, 100))
@@ -39,7 +48,7 @@ export const App: React.FC = () => {
     return (
       <main className="container">
         <article style={{ marginTop: "25vh", textAlign: "center" }}>
-          <div>Loading...</div>
+        <button aria-busy="true" className="outline">Please wait…</button>
         </article>
       </main>
     )
@@ -47,9 +56,9 @@ export const App: React.FC = () => {
 
   return (
     <main className="container">
-      <article key={currentMessage} style={{ marginTop: "25vh", textAlign: "center" }}>
-        <header>{checkMessages[currentMessage].id} / {checkMessages.length}</header>
-        {checkMessages[currentMessage].text}
+      <article key={currentMessage!._id} style={{ marginTop: "25vh", textAlign: "center" }}>
+        <header>Previously labeled as <strong>{labelsMap[currentMessage?.label || 0]}</strong></header>
+        {currentMessage!.text}
         <footer>
           <div className="grid">
             <button type="button" style={{ backgroundColor: '#7d2424' }} onClick={() => updateMessageLabel(currentMessage, 100)}>[1] Spam</button>

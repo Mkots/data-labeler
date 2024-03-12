@@ -11,6 +11,9 @@ const router = express.Router()
 const port = process.env.PORT || 3000;
 const dbURI = process.env.MONGODB_URI || "mongodb://mongodb:27017/mydatabase";
 
+type DataShape = { text: string, label?: number, }
+type DataStape = { text: string, label: number, reviwed: boolean}
+
 const upload = multer({ dest: 'uploads/' });
 const messageSchema = new mongoose.Schema({
   text: {
@@ -22,6 +25,11 @@ const messageSchema = new mongoose.Schema({
       required: false, 
       default: null, 
   },
+  reviewed: {
+      type: Boolean,
+      required: false,
+      default: false,
+  }
 });
 
 const Message = mongoose.model('Message', messageSchema);
@@ -37,7 +45,7 @@ router.post('/upload', upload.single('data.csv'), (req, res) => {
   fs.createReadStream(req.file!.path)
     .pipe(csvParser({
       mapHeaders: ({ header }) => header.trim(),
-      mapValues: ({ value }) => value.trim()
+      mapValues: ({ value }) => value ? value.trim() : undefined,
     }))
     .on('data', (data) => results.push(data))
     .on('end', () => {
@@ -57,19 +65,26 @@ router.post('/upload', upload.single('data.csv'), (req, res) => {
       });
 });
 
-router.get('/message/:id', async (req, res) => {
-  const message = await Message.findById(req.params.id);
-  res.json(message);
-});
+router.get('/message', async (_, res) => {
+  const message = await Message.findOne({ reviewed: false })
+  res.json(message)
+})
 
-router.put('/message/:id', async (req, res) => {
-  const message = await Message.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(message);
-});
+router.put('/message', async (req: Request< { old: DataShape, new: DataStape /*with label*/ }>, res) => {
+  const message = await Message.findOneAndReplace(req.body.old, req.body.new)
+  res.json(message)
+})
 
-router.get('/download', async (req, res) => {
-  const records = await Message.find();
-  stringify(records, { header: true }, (err, output) => {
+router.get('/download', async (_, res) => {
+  const records = await Message.find({ reviewed: true });
+  const messages = records.map((record) => {
+    return {
+      text: record.text,
+      label: record.label,
+      reviewed: record.reviewed,
+    }
+  });
+  stringify(messages, { header: true }, (err, output) => {
       if (err) throw err;
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=\"download.csv\"');
