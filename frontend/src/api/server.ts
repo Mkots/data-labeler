@@ -5,14 +5,16 @@ export const makeServer = () => {
     
 createServer({
         routes() {
-            this.get("/api/messages", (schema) => {
-                return schema.db.messages
+            this.get("/api/message", (schema) => {
+                console.log(schema.db.messages.where({reviewed: undefined})[0]);
+                
+                return schema.db.messages.where({reviewed: undefined})[0]
             }),
-            this.patch("/api/message/:id", (schema, request) => {
-                let id = request.params.id
+            this.put("/api/message/", (schema, request) => {
                 let attrs = JSON.parse(request.requestBody)
-                console.log(attrs);
-                return schema.db.messages.update(id, attrs)
+                const id = attrs.new.id
+                const message = attrs.new
+                return schema.db.messages.update(id, message)
             })
         },
         seeds(server) {

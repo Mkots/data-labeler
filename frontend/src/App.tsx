@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
+import { CiSquareChevLeft, CiSquareChevRight } from "react-icons/ci";
 
 import { makeServer } from "./api/server"
 import { getMessage } from './api/getMessage'
@@ -8,15 +9,13 @@ import { updateLabel } from './api/updateLabel'
 if (!import.meta.env.PROD) makeServer();
 
 const keyMap = {
-  SPAM: "1",
-  OK: "2",
-  HARM: "3"
+  BAD: ["1", "left"],
+  OK: ["2", "right"],
 };
 
 const labelsMap = [
   "OK",
-  "Spam",
-  "Harm"
+  "BAD"
 ]
 
 export const App: React.FC = () => {
@@ -32,6 +31,7 @@ export const App: React.FC = () => {
   }, [])
 
   const updateMessageLabel = (message: any, label: number) => {
+    setIsLoading(true)
     updateLabel(message, label)
     getMessage()
       .then((json) => {
@@ -40,9 +40,8 @@ export const App: React.FC = () => {
       })
   }
 
-  useHotkeys(keyMap.SPAM, () => updateMessageLabel(currentMessage, 100))
+  useHotkeys(keyMap.BAD, () => updateMessageLabel(currentMessage, 1))
   useHotkeys(keyMap.OK, () => updateMessageLabel(currentMessage, 0))
-  useHotkeys(keyMap.HARM, () => updateMessageLabel(currentMessage, 200))
 
   if (isLoading) {
     return (
@@ -56,14 +55,15 @@ export const App: React.FC = () => {
 
   return (
     <main className="container">
-      <article key={currentMessage!._id} style={{ marginTop: "25vh", textAlign: "center" }}>
+      <article key={currentMessage!.text} style={{ marginTop: "25vh", textAlign: "center" }}>
         <header>Previously labeled as <strong>{labelsMap[currentMessage?.label || 0]}</strong></header>
         {currentMessage!.text}
         <footer>
           <div className="grid">
-            <button type="button" style={{ backgroundColor: '#7d2424' }} onClick={() => updateMessageLabel(currentMessage, 100)}>[1] Spam</button>
-            <button type="button" style={{ backgroundColor: '#2f6f1b' }} onClick={() => updateMessageLabel(currentMessage, 0)}>[2] OK</button>
-            <button type="button" style={{ backgroundColor: '#a95025' }} onClick={() => updateMessageLabel(currentMessage, 200)}>[3] Harm</button>
+            <button type="button" style={{ backgroundColor: '#7d2424' }} onClick={() => updateMessageLabel(currentMessage, 1)}>
+            <CiSquareChevLeft size={32}/> BAD</button>
+            <button type="button" style={{ backgroundColor: '#2f6f1b' }} onClick={() => updateMessageLabel(currentMessage, 0)}>
+            OK <CiSquareChevRight size={32}/></button>
           </div>
         </footer>
       </article>
